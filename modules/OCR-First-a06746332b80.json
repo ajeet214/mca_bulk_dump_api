@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "scoreme-image-extraction",
+  "private_key_id": "d3441ca05b0aecba18acd1c9e1656c46532f0733",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDAO80pI12lW6iQ\nuvpX+oRmTInbbSkbjPEeaObNka1ttJXoGkMHnnpInhbX4nL0thJlYHeIZZ1EfsdO\nbRJsD+YJG7w+91OPoUKVpzcdjC4ZVB0ac257CLthGYARX01hlcJEcUdrN+tq2mI8\nA72wSi5PJDRQT21hdJ7x2Z3P/RYJ09K1A4dLvg5nFw7F8SDXe4zArf8snT5l9xPp\nG34wQUK61BocB1ZtVUKaR5SuR0ehx11bEHo7e1ZIgcLqw4RktigwLkDgyZ9gdvTo\nVHPiMnoMSKX5cbay0d2pPwC9o26hDEZQrBDxkKHxRBImHhSeN8tWhXlh2YdwW1ca\nUHE1kUxJAgMBAAECggEAJG1wpEIKZeJnn/1+oRtc6ZHJceZOquTbcDrKudvINIjK\n+2+2kgQLAiXLCF/mDs9Nzx4nqJYw5iDsHcV3fzjIC6PQ2VG+6PHTD07fl97PgYc5\n+KA1KGVwNKdDaIdZv4tEg/m/Yeb32ojFor/Gu1hjTCX9L9bNUHFsCUKGsDoyaewA\nYRHbp9RGEo/N74uQ5SqybHeXvhI6DYGGHXEhI71nWcgc7TSD9L1dKITgSFZEjxZF\n8kJqoNsoACnv8k/bcg/itFMHnwNn68VbFYqrPXC+djdRRBtKzpkcr+dR3M/2QdRq\nNu8hNH5bbL7ZcVT/qmAi1r+er9KNgqTXXoen8Y1QPQKBgQD4CfhB0VuB+xHGEBO+\nrm/wvphQUp7YMpZMw9S5XuN4l7B/MpHHpbzF2hNPzgzYaaqAF3Ei5l0yxnfsiY6b\nCdfbNdBtmGXyrllqCLDsgNwCC+j+oZ9hJFTPTVYzijNirqjWwcaXV4sL9ofNHHkN\nyD+ZmHPalrhVS8meIOIR5vaCpwKBgQDGZ02MuZu2RVojzg4FvAyWMRVUCPkEOtlQ\nNLtJDn66bQd5PlDx19+wTsmeVZx5ig4f+rRpGISsb/Yrd6iusLzZhFv4ojkGxgB1\nr1ik6s9ekKxYy+0nfM3AmrK8qoajQTiz8mQZ8RpDUR8Lyj+wvu14iCelsJ2c0GWR\naMO5LY5HjwKBgQDSmbx1PephgajEr8/j/j5DfcDbqlr+nG0rPrc2sY+YS8trJKfM\niTewEgqFnyEe+xDuc3j3Nft56jPW3bD8iK4DjTysYVJmbIy00C5QkNS81Bn/YYFu\nvKdZ4INJfZVFu6DVv2/7/jOsc6U4jW1nO1hs9Jmhxok6uv+0SJ1Kr/0sTwKBgAl9\noZEMw+0ZLjGuRq9ximyY1ntZnofcRM74Zskc32UNmCDtoTOgbvvhGPXxBHYv63MO\nLBkm6hnRlUYJCFGq9K23Dis7n1y6lgULKUNiVB8i7ouk3ahY6QLAo7IwuhYPJaY9\n/xnalbYIqGKI/zj2OSfd43+ijjeVJHarO0mda0PzAoGANzHAgv03xdts11yP7Xhv\nvslq7cWykGCkeye2eWUvG+pSiXaEZpm9k8KJ402CXwO2DEcaHg1h5+AQ9P0FYvDN\nGSv0F6naSxNadchXimYrV7RmstrQAaOVr1skSrIKu4CCY2EfDvO++MNft77mdxq5\nte4XYiWGQmSUxDm+eqtC+EY=\n-----END PRIVATE KEY-----\n",
+  "client_email": "image-parsing@scoreme-image-extraction.iam.gserviceaccount.com",
+  "client_id": "107236071785741459932",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/image-parsing%40scoreme-image-extraction.iam.gserviceaccount.com"
+}

@@ -1,0 +1,301 @@
+import io
+import os
+import time
+import re
+from datetime import datetime
+import warnings
+from time import sleep
+from selenium import webdriver
+import pymysql
+from bs4 import BeautifulSoup
+from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
+from google.cloud import vision
+from google.cloud.vision import types
+from config import Config
+warnings.filterwarnings('ignore')
+
+# Common Regex
+cin_regex = "^([L|U]{1})([0-9]{5})([A-Za-z]{2})([0-9]{4})([A-Za-z]{3})([0-9]{6})$"
+fcrn_regex = "^([F]{1})([0-9]{5})$"
+llpin_regex = "^([A-Za-z]{3})-([0-9]{4})$"
+fllpin_regex = "^([F]{1})([A-Za-z]{3})-([0-9]{4})$"
+
+
+class IndexOfCharges:
+
+    def __init__(self):
+
+        self.conn = pymysql.connect(host=Config.DATABASE_CONFIG['host'],
+                                    port=Config.DATABASE_CONFIG['port'],
+                                    user=Config.DATABASE_CONFIG['user'],
+                                    passwd=Config.DATABASE_CONFIG['password'],
+                                    db=Config.DATABASE_CONFIG['database']
+                                    )
+        self.cursor = self.conn.cursor()
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS indexOfcharges '
+                            '(cin_llpin VARCHAR(30), '
+                            'company_type_flag VARCHAR(10), '
+                            'created_date VARCHAR(20), '
+                            'updated_date VARCHAR(20), '
+                            'charge_sno VARCHAR(5), '
+                            'charge_srn VARCHAR(30), '
+                            'charge_id VARCHAR(100), '
+                            'charge_holder_name VARCHAR(200), '
+                            'date_of_creation VARCHAR(20), '
+                            'date_of_modification VARCHAR(20), '
+                            'date_of_satisfaction VARCHAR(20), '
+                            'charge_amount VARCHAR(20), '
+                            'address VARCHAR(200), id VARCHAR(200) NOT NULL, PRIMARY KEY (id))')
+
+        os.environ[
+            "GOOGLE_APPLICATION_CREDENTIALS"] = "OCR-First-a06746332b80.json"
+
+        self.client = vision.ImageAnnotatorClient()
+        options = webdriver.ChromeOptions()
+        options.add_experimental_option("excludeSwitches", ['enable-automation'])
+        options.add_argument("--incognito")
+        options.add_argument("--start-maximized")
+        options.add_argument("--disable-infobars")
+        options.add_argument("--disable-extension")
+        self.driver = webdriver.Chrome(options=options)
+
+        # remote webdriver
+        # self.driver = webdriver.Remote(
+        #     command_executor='http://' + Config.SELENIUM_CONFIG['host'] + ':' + Config.SELENIUM_CONFIG[
+        #         'port'] + '/wd/hub',
+        #     desired_capabilities=options.to_capabilities(),
+        # )
+
+    def data_parser(self, cin_llpin):
+
+        if re.match(cin_regex, str(cin_llpin).upper()):
+            flag = 'CIN'
+        elif re.match(fcrn_regex, str(cin_llpin).upper()):
+            flag = 'FCRN'
+        elif re.match(llpin_regex, str(cin_llpin).upper()):
+            flag = 'LLPIN'
+        elif re.match(fllpin_regex, str(cin_llpin).upper()):
+            flag = 'FLLPIN'
+        else:
+            flag = 'REJECT'
+
+        no_of_records = self.driver.find_element_by_xpath('//*[@id="charges_info"]').text.split(' ')[-2]
+        print("total records: ", no_of_records)
+        pages = 1
+        if int(no_of_records) <= 10:
+            pass
+        elif 10 < int(no_of_records) <= 20:
+            pages = 2
+        elif 20 < int(no_of_records) <= 30:
+            pages = 3
+        elif 30 < int(no_of_records) <= 40:
+            pages = 4
+        elif 40 < int(no_of_records) <= 50:
+            pages = 5
+        elif 50 < int(no_of_records) <= 60:
+            pages = 6
+        elif 60 < int(no_of_records) <= 70:
+            pages = 7
+        elif 70 < int(no_of_records) <= 80:
+            pages = 8
+        elif 80 < int(no_of_records) <= 90:
+            pages = 9
+        elif 90 < int(no_of_records) <= 100:
+            pages = 10
+
+        print('total pages: ', pages)
+        for each_page in range(pages):
+
+            self.driver.find_element_by_xpath('//*[@id="charges"]')
+
+            soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+            # print(soup.prettify())
+            all_rows = soup.find('table', id='charges').find('tbody').find_all('tr')
+
+            for each_tr in all_rows:
+                # print(each_tr)
+                temp_lst = each_tr.text.split('\n')[1:-1]
+                # print(temp_lst)
+
+                # print(BeautifulSoup(each_tr, 'html.parser').find_all('td'))
+                company_type_flag = flag
+                created_date = time.strftime('%Y-%m-%d %H:%M:%S')
+                updated_date = time.strftime('%Y-%m-%d %H:%M:%S')
+
+                charge_sno = temp_lst[0] if temp_lst[0] != '-' and temp_lst[0] != '' and temp_lst[0] != 'NULL' and temp_lst[
+                    0] != 'null' else None
+
+                charge_srn = temp_lst[1] if temp_lst[1] != '-' and temp_lst[1] != '' and temp_lst[1] != 'NULL' and temp_lst[
+                    1] != 'null' else None
+
+                charge_id = temp_lst[2] if temp_lst[2] != '-' and temp_lst[2] != '' and temp_lst[2] != 'NULL' and temp_lst[
+                    2] != 'null' else None
+
+                charge_holder_name = temp_lst[3] if temp_lst[3] != '-' and temp_lst[3] != '' and temp_lst[3] != 'NULL'\
+                    and temp_lst[3] != 'null' else None
+
+                if temp_lst[4] != '-' and temp_lst[4] != '' and temp_lst[5] != 'NULL' and temp_lst[5] != 'null':
+                    d = temp_lst[4]
+                    date = datetime.strptime(d, "%d/%m/%Y")
+                    date = datetime.strftime(date, "%Y-%m-%d")
+                    date_of_creation = date
+                else:
+                    date_of_creation = None
+
+                if temp_lst[5] != '-' and temp_lst[5] != '' and temp_lst[5] != 'NULL' and temp_lst[5] != 'null':
+                    d = temp_lst[5]
+                    date = datetime.strptime(d, "%d/%m/%Y")
+                    date = datetime.strftime(date, "%Y-%m-%d")
+                    date_of_modification = date
+                else:
+                    date_of_modification = None
+
+                if temp_lst[6] != '-' and temp_lst[6] != '' and temp_lst[6] != 'NULL' and temp_lst[6] != 'null':
+                    d = temp_lst[6]
+                    date = datetime.strptime(d, "%d/%m/%Y")
+                    date = datetime.strftime(date, "%Y-%m-%d")
+                    date_of_satisfaction = date
+                else:
+                    date_of_satisfaction = None
+
+                charge_amount = temp_lst[7] if temp_lst[7] != '-' and temp_lst[7] != '' and temp_lst[7] != 'NULL' and\
+                    temp_lst[7] != 'null' else None
+
+                address = temp_lst[8] if temp_lst[8] != '-' and temp_lst[8] != '' and temp_lst[8] != 'NULL' and temp_lst[
+                    8] != 'null' else None
+
+                data = self.cursor.execute("select * from indexOfcharges where id=%s",
+                                           cin_llpin+company_type_flag+charge_id)
+                # print(data)
+                if data == 0:
+                    # print("inserting")
+                    sql = "INSERT INTO indexOfcharges " \
+                          "(cin_llpin, company_type_flag, " \
+                          "created_date, updated_date, charge_sno, charge_srn, " \
+                          "charge_id, charge_holder_name, " \
+                          "date_of_creation, date_of_modification, " \
+                          "date_of_satisfaction, charge_amount," \
+                          "address, id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+                    val = (cin_llpin, company_type_flag, created_date, updated_date, charge_sno, charge_srn, charge_id,
+                           charge_holder_name, date_of_creation, date_of_modification, date_of_satisfaction,
+                           charge_amount, address, cin_llpin+company_type_flag+charge_id)
+                    self.cursor.execute(sql, val)
+                elif data == 1:
+                    # print("updating")
+                    sql = "UPDATE indexOfcharges " \
+                          "SET cin_llpin=%s, company_type_flag=%s, " \
+                          "updated_date=%s, charge_sno=%s, charge_srn=%s, " \
+                          "charge_id=%s, charge_holder_name=%s, " \
+                          "date_of_creation=%s, date_of_modification=%s, " \
+                          "date_of_satisfaction=%s, charge_amount=%s," \
+                          "address=%s, id=%s WHERE id=%s"
+
+                    val = (cin_llpin, company_type_flag, updated_date, charge_sno, charge_srn, charge_id,
+                           charge_holder_name, date_of_creation, date_of_modification, date_of_satisfaction,
+                           charge_amount, address, cin_llpin+company_type_flag+charge_id, cin_llpin+company_type_flag+charge_id)
+                    self.cursor.execute(sql, val)
+
+            self.driver.find_element_by_xpath('//*[@id="charges_next"]').click()
+            sleep(0.3)
+
+        self.conn.commit()
+
+    @staticmethod
+    def captcha_processor(extracted_text):
+        processed_txt = extracted_text.replace('!', 'l'). \
+            replace('ɔ', 'o').replace(',1', 'n').replace(':', 'r').replace("w'", "w"). \
+            replace('/', 'y').replace(' ', '').replace('D', 'b').lower()
+        return processed_txt
+
+    def captcha_fetcher(self):
+
+        captcha_image = self.driver.find_element_by_css_selector('#captcha')
+        file_path = "../captcha_image.png"
+        captcha_image.screenshot(filename=file_path)
+
+        with io.open(file_path, 'rb') as image_file:
+            content = image_file.read()
+
+        image = types.Image(content=content)
+        response = self.client.text_detection(image=image)
+        print("unprocessed captcha1: ", response.text_annotations[0].description.split('\n')[0])
+        captcha_text = response.text_annotations[1].description
+        print("unprocessed captcha2: ", captcha_text)
+        processed_text = self.captcha_processor(captcha_text)
+        return processed_text
+
+    def scrapper(self, cin_llpin):
+
+        url = 'http://www.mca.gov.in/mcafoportal/viewCompanyMasterData.do'
+        self.driver.get(url)
+        sleep(1)
+        self.driver.find_element_by_xpath('//*[@class="sbinner"]/span[1]/button').click()
+        self.driver.find_element_by_xpath('//*[@id="services"]').click()
+        # self.driver.get('http://www.mca.gov.in/mcafoportal/showIndexOfCharges.do')
+        self.driver.find_element_by_xpath('//*[@id="subnav-view"]/ul/li[3]').click()
+        sleep(0.5)
+
+        for each_number in cin_llpin:
+            print("----------------------------------")
+            print('number: ', each_number)
+
+            processed_text = self.captcha_fetcher()
+            print("processed captcha2: ", processed_text)
+
+            self.driver.find_element_by_xpath('//*[@id="companyID"]').clear()
+            sleep(0.5)
+            self.driver.find_element_by_xpath('//*[@id="companyID"]').send_keys(each_number)
+            sleep(0.5)
+            self.driver.find_element_by_xpath('//*[@id="userEnteredCaptcha"]').send_keys(processed_text)
+            self.driver.find_element_by_xpath('//td/input[@type="submit"]').click()
+            sleep(0.5)
+
+            try:
+                self.data_parser(each_number)
+            except NoSuchElementException:
+
+                error_text = self.driver.find_element_by_xpath('//*[@id="overlayCnt"]').text
+                if error_text.startswith('Enter valid Letters'):
+                    pass
+                elif error_text.startswith('No Charges Exists for Company'):
+                    print('No Charges Exists')
+                    self.driver.find_element_by_xpath('//*[@id="msgboxclose"]').click()
+                    continue
+
+                msg = True
+                while msg:
+
+                    sleep(0.5)
+                    self.driver.find_element_by_xpath('//*[@id="msgboxclose"]').click()
+                    try:
+                        processed_text = self.captcha_fetcher()
+                        sleep(0.2)
+                        self.driver.find_element_by_xpath('//*[@id="userEnteredCaptcha"]').send_keys(processed_text)
+                        self.driver.find_element_by_xpath('//td/input[@type="submit"]').click()
+                        # print("trying")
+                        try:
+                            self.driver.find_element_by_xpath('//*[@id="msgboxclose"]')
+                            # print("&&")
+                        except NoSuchElementException:
+                            msg = False
+                    except NoSuchElementException:
+                        print("in exception")
+                    print(msg)
+
+                sleep(0.5)
+                self.data_parser(each_number)
+            sleep(1)
+
+        self.driver.close()
+
+
+if __name__ == '__main__':
+    Obj = IndexOfCharges()
+    #cin number
+    Obj.scrapper(['U27101CT2008PTC020561', 'U51504MH1993PTC251544', 'F01221', 'AAA-9391'])
+    # Obj.scrapper('U51504MH1993PTC251544') # pagination
+    # Obj.scrapper('AAA-9391') #llp number
+    # Obj.scrapper('F01221')  # no charge exists for fcrn
+
